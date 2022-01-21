@@ -42,11 +42,11 @@ if not CHAINED_ACCOUNTS_HOME.exists():
     CHAINED_ACCOUNTS_HOME.mkdir()
 
 
-def ask_for_password(uid: str) -> str:
-    password1 = getpass.getpass(f"Enter encryption password for {uid}: ")
+def ask_for_password(name: str) -> str:
+    password1 = getpass.getpass(f"Enter encryption password for {name}: ")
     password2 = getpass.getpass("Confirm password: ")
     if password2 != password1:
-        raise ConfirmPasswordError(f"Account: {uid}")
+        raise ConfirmPasswordError(f"Account: {name}")
     password = password1
 
     return password
@@ -63,8 +63,8 @@ class ChainedAccount:
     will be raised.
 
     Attributes:
-        id:
-            User-specified account identifier.
+        name:
+            User-specified account name (no spaces).
         chain_ids:
             List of applicable EVM chains for this account.
         unlocked:
@@ -78,16 +78,16 @@ class ChainedAccount:
     _chain_ids: List[int]
     _account_json: Dict[str, Any]
 
-    def __init__(self, uid: str):
+    def __init__(self, name: str):
         """Get an account from the keystore
 
         Accounts must first be added to the keystore using `ChainedAccount.add()`
 
         Args:
-            uid: Unique account id
+            name: Unique account name
         """
 
-        self.uid: str = uid
+        self.name: str = name
         self._local_account: Optional[LocalAccount] = None
         self._chain_ids = []
         try:
@@ -96,17 +96,17 @@ class ChainedAccount:
             self._account_json = {}
 
     def __repr__(self) -> str:
-        return f"ChainedAccount({self.uid})"
+        return f"ChainedAccount({self.name})"
 
     @classmethod
-    def get(cls, uid: str):
+    def get(cls, name: str):
         """Get an account from the keystore"""
-        return cls(uid)
+        return cls(name)
 
     @classmethod
     def add(
         cls,
-        uid: str,
+        name: str,
         *,
         chain_ids: Union[int, List[int]],
         private_key: bytes,
@@ -115,8 +115,8 @@ class ChainedAccount:
         """Add a new ChainedAccount to the keystore.
 
         Args:
-            uid:
-                Unique account id
+            name:
+                Account name
             chain_ids:
                 List of applicable EVM chains for this account.
             private_key:
@@ -128,11 +128,11 @@ class ChainedAccount:
             A new ChainedAccount
         """
 
-        uids = list_uids()
-        if uid in uids:
-            raise Exception(f"Account {uid} already exists ")
+        names = list_names()
+        if name in names:
+            raise Exception(f"Account {name} already exists ")
 
-        self = cls(uid=uid)
+        self = cls(name=name)
 
         if isinstance(chain_ids, int):
             chain_ids = [chain_ids]
@@ -141,16 +141,16 @@ class ChainedAccount:
 
         if password is None:
             try:
-                password = ask_for_password(uid)
+                password = ask_for_password(name)
             except ConfirmPasswordError:
                 print("Passwords do not match. Try again.")
-                password = ask_for_password(uid)
+                password = ask_for_password(name)
 
         if password is None:
-            password1 = getpass.getpass(f"Enter encryption password for {uid}: ")
+            password1 = getpass.getpass(f"Enter encryption password for {name}: ")
             password2 = getpass.getpass("Confirm password: ")
             if password2 != password1:
-                raise ConfirmPasswordError(f"Account: {uid}")
+                raise ConfirmPasswordError(f"Account: {name}")
             password = password1
 
         keystore_json = Account.encrypt(private_key, password)
@@ -171,7 +171,7 @@ class ChainedAccount:
             return
 
         if password is None:
-            password = getpass.getpass(f"Enter password for {self.uid} account: ")
+            password = getpass.getpass(f"Enter password for {self.name} account: ")
 
         pkey = Account.decrypt(self._account_json["keystore_json"], password)
         self._local_account = Account.from_key(pkey)
@@ -199,7 +199,7 @@ class ChainedAccount:
             assert self._local_account is not None
             return HexBytes(self._local_account.key)
         else:
-            raise AccountLockedError(f"{self.uid} ChainedAccount must be unlocked to access the private key.")
+            raise AccountLockedError(f"{self.name} ChainedAccount must be unlocked to access the private key.")
 
     @property
     def address(self) -> HexAddress:
@@ -211,7 +211,7 @@ class ChainedAccount:
             assert self._local_account is not None
             return self._local_account
         else:
-            raise AccountLockedError(f"{self.uid} LocalAccount cannot be accessed when ChainedAccount is locked.")
+            raise AccountLockedError(f"{self.name} LocalAccount cannot be accessed when ChainedAccount is locked.")
 
     # --------------------------------------------------------------------------------
     # File access methods
@@ -219,7 +219,7 @@ class ChainedAccount:
     @property
     def keyfile(self) -> Path:
         """Returns the path to the locally stored keyfile"""
-        return CHAINED_ACCOUNTS_HOME / f"{self.uid}.json"
+        return CHAINED_ACCOUNTS_HOME / f"{self.name}.json"
 
     def _load(self) -> None:
         """Load the account from disk."""
@@ -242,15 +242,15 @@ class ChainedAccount:
             self.keyfile.unlink()
 
 
-def list_uids():
-    """Get a list of all account uids"""
-    uids = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
+def list_names():
+    """Get a list of all account names"""
+    names = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
 
-    return uids
+    return names
 
 
 def find_accounts(
-    uid: Optional[str] = None,
+    name: Optional[str] = None,
     chain_id: Optional[int] = None,
     address: Optional[Union[AnyAddress, str, bytes]] = None,
 ) -> List[ChainedAccount]:
@@ -259,7 +259,7 @@ def find_accounts(
     If no arguments are provided, all accounts will be returned.
 
     Args:
-        uid: search by account id
+        name: search by account name
         chain_id: search for accounts with matching chain_id
         address: search for accounts with matching address
 
@@ -268,10 +268,10 @@ def find_accounts(
     """
 
     accounts = []
-    for acc_uid in list_uids():
-        account = ChainedAccount(acc_uid)
-        if uid is not None:
-            if uid != account.uid:
+    for acc_name in list_names():
+        account = ChainedAccount(acc_name)
+        if name is not None:
+            if name != account.name:
                 continue
         if chain_id is not None:
             if chain_id not in account.chain_ids:
