@@ -1,6 +1,6 @@
 import click
 import chained_accounts
-from chained_accounts.base import EvmAccount, list_account_names
+from chained_accounts.base import ChainedAccount, find_accounts
 import getpass
 from typing import List
 from hexbytes import HexBytes
@@ -10,7 +10,7 @@ from hexbytes import HexBytes
 @click.pass_context
 @click.option("--version", is_flag=True, help="Display chained_accounts version and exit.")
 def main(ctx, version) -> None:
-    """Main evmacc command line interface"""
+    """Main chained command line interface"""
     ctx.ensure_object(dict)
     if version:
         print(f"Version: {chained_accounts.__version__}")
@@ -21,10 +21,10 @@ def main(ctx, version) -> None:
 
 
 @main.command()
-@click.argument("account_name", type=str)
+@click.argument("name", type=str)
 @click.argument("private_key", type=str)
 @click.argument("chain_ids", type=int, nargs=-1)
-def add(account_name: str, private_key: str, chain_ids: List[int]) -> None:
+def add(name: str, private_key: str, chain_ids: List[int]) -> None:
     """Add an account.
 
     Adds an encrypted private_key for use by an application.  ACCOUNT_NAME is a unique name
@@ -33,38 +33,44 @@ def add(account_name: str, private_key: str, chain_ids: List[int]) -> None:
     If PASSWORD is not provided, the user will be prompted to enter a password
     """
 
-    test_account = EvmAccount(account_name)
+    test_account = ChainedAccount(name)
     if test_account.keyfile.exists():
-        click.echo(f"Account {account_name} already exists.")
+        click.echo(f"Account {name} already exists.")
         return
 
-    account = EvmAccount.new(name=account_name, private_key=HexBytes(private_key), chain_ids=chain_ids)
+    account = ChainedAccount.new(name=name, private_key=HexBytes(private_key), chain_ids=chain_ids)
 
-    click.echo(f"Added new account {account_name} (address= {account.address}) for use on chains {account.chain_ids}")
-
-
-@main.command()
-def all():
-    """List all account names."""
-    names = list_account_names()
-    print(f"Found {len(names)} accounts.")
-    for name in names:
-        click.echo(f"  {name}")
+    click.echo(f"Added new account {name} (address= {account.address}) for use on chains {account.chain_ids}")
 
 
 @main.command()
-@click.argument("account_name", type=str)
-def get_key(account_name):
+@click.option("--name", type=str)
+@click.option("--address", type=str)
+@click.option("--chain_id", type=int)
+def find(name, address, chain_id):
+    """Find accounts."""
+
+    accounts = find_accounts(name=name, address=address, chain_id=chain_id)
+    click.echo(f"Found {len(accounts)} accounts.")
+    for account in accounts:
+        click.echo(f"Account name: {account.name}, address: {account.address}, chain IDs: {account.chain_ids}")
+
+
+@main.command()
+@click.argument("name", type=str)
+@click.option("-p", "--password", type=str)
+def key(name, password):
     """Get the private key for an account."""
 
-    account = EvmAccount(account_name)
+    account = ChainedAccount(name)
     if not account.keyfile.exists():
-        click.echo(f"Account {account_name} does not exist.")
+        click.echo(f"Account {name} does not exist.")
         return
 
     try:
-        password = getpass.getpass(f"Enter password for {account_name} keyfile: ")
-        acc = EvmAccount(account_name)
+        if not password:
+            password = getpass.getpass(f"Enter password for {name} keyfile: ")
+        acc = ChainedAccount(name)
         acc.unlock(password)
         click.echo(f"Private key: {acc.private_key.hex()}")
     except ValueError:
@@ -72,13 +78,13 @@ def get_key(account_name):
 
 
 @main.command()
-@click.argument("account_name", type=str)
-def delete(account_name):
+@click.argument("name", type=str)
+def delete(name):
     """Delete an account."""
 
-    account = EvmAccount(account_name)
+    account = ChainedAccount(name)
     if not account.keyfile.exists():
-        click.echo(f"Account {account_name} does not exist.")
+        click.echo(f"Account {name} does not exist.")
         return
 
     account.delete()
