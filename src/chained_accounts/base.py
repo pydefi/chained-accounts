@@ -101,7 +101,12 @@ class ChainedAccount:
         return f"ChainedAccount(name={self.name})"
 
     @classmethod
-    def new(
+    def get(cls, name: str):
+        """Get an account"""
+        return cls(name)
+
+    @classmethod
+    def add(
         cls,
         name: str,
         *,
@@ -244,15 +249,6 @@ def list_names():
     names = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
 
     return names
-
-
-def get_account(name: str) -> ChainedAccount:
-    """Get account by name.
-
-    Returns:
-        The ChainedAccount account with matching name or an exception if it does not exist
-    """
-    return ChainedAccount(name)
 
 
 def find_accounts(

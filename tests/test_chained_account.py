@@ -3,7 +3,7 @@ from typing import List
 import pytest
 from hexbytes import HexBytes
 from click.testing import CliRunner
-from chained_accounts.base import ChainedAccount, AccountLockedError, get_account, find_accounts
+from chained_accounts.base import ChainedAccount, AccountLockedError, find_accounts
 import random
 from chained_accounts.cli import main
 
@@ -20,9 +20,9 @@ def random_name() -> str:
 def test_accounts() -> List[ChainedAccount]:  # type: ignore
     """Create some test accounts"""
 
-    a1 = ChainedAccount.new(random_name(), chain_ids=[1, 4], private_key=pkey, password=PASSWORD)
-    a2 = ChainedAccount.new(random_name(), chain_ids=[2], private_key=pkey, password=PASSWORD)
-    a3 = ChainedAccount.new(random_name(), chain_ids=[1, 3], private_key=pkey, password=PASSWORD)
+    a1 = ChainedAccount.add(random_name(), chain_ids=[1, 4], private_key=pkey, password=PASSWORD)
+    a2 = ChainedAccount.add(random_name(), chain_ids=[2], private_key=pkey, password=PASSWORD)
+    a3 = ChainedAccount.add(random_name(), chain_ids=[1, 3], private_key=pkey, password=PASSWORD)
 
     yield [a1, a2, a3]
 
@@ -65,7 +65,7 @@ def test_new_evm_account(test_accounts):
     assert not test_accounts[0].unlocked
 
     # Create a new account objecb by name
-    t1 = get_account(test_accounts[0].name)
+    t1 = ChainedAccount.get(test_accounts[0].name)
     assert isinstance(t1, ChainedAccount)
 
     # Search account

@@ -38,7 +38,7 @@ def add(name: str, private_key: str, chain_ids: List[int]) -> None:
         click.echo(f"Account {name} already exists.")
         return
 
-    account = ChainedAccount.new(name=name, private_key=HexBytes(private_key), chain_ids=chain_ids)
+    account = ChainedAccount.add(name=name, private_key=HexBytes(private_key), chain_ids=chain_ids)
 
     click.echo(f"Added new account {name} (address= {account.address}) for use on chains {account.chain_ids}")
 
