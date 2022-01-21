@@ -50,6 +50,12 @@ acc.unlock("foo")
 print(f"Private key: {acc.key.hex()}")
 ```
 
+```pycon
+ChainedAccount('my-eth-acct')
+Address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0
+Chains: [1, 4]
+Private key: 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706
+```
 ### Command Line
 
     >> chained add my-eth-acct 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706 1 4
