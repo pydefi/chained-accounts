@@ -1,15 +1,15 @@
 # Chained Accounts
+
 ![Continuous Integration](https://github.com/tellor-io/pytelliot/actions/workflows/py39.yml/badge.svg)
 
 A thin framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
 *Motivation*
 
-Blockchain applications are becoming more cross-chain and multi-chain, therefore having a need to 
-manage multiple user accounts on different chains.
-Users need an easy way to configure an application to use their private keys, including specifying which EVM
-chains they can be used on.  Applications also need an easy eay to access user private keys while
-providing a way to handle accounts securely, rather than storing them in plain text.  
+Blockchain applications are becoming more cross-chain and multi-chain, therefore having a need to manage multiple user
+accounts on different chains. Users need an easy way to configure an application to use their private keys, including
+specifying which EVM chains they can be used on. Applications also need easy access to user private keys while providing
+a way to handle them securely, rather than storing them in plain text.
 
 *Overview*
 
@@ -22,7 +22,7 @@ Each `ChainedAccount`:
 Applications can easily access the keystore and search for accounts by name, EVM chain, and address.
 
 Note: This package does not directly perform any encryption/decryption, but relies on the
-https://github.com/ethereum/eth-account package.  
+https://github.com/ethereum/eth-account package.
 
 ** USE AT YOUR OWN RISK **
 
@@ -30,7 +30,38 @@ https://github.com/ethereum/eth-account package.
 
     pip install chained_accounts
 
-## Usage
+## Examples
+
+Create an account for use on either Ethereum Mainnet or Rinkeby testnet.
+
+### Python
+
+```python
+from chained_accounts import ChainedAccount, find_accounts
+
+key1 = "0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706"
+ChainedAccount.add("my-eth-acct", [1, 4], key1, password="foo")
+
+acc = find_accounts(chain_id=1)[0]
+print(f"Address: {acc.address}")
+print(f"Chains: {acc.chains}")
+
+acc.unlock("foo")
+print(f"Private key: {acc.key.hex()}")
+```
+
+### Command Line
+
+    >> chained add my-eth-acct 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706 1 4
+    Enter encryption password for my-eth-acct: 
+    Confirm password:
+    Added new account my-eth-acct (address= 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0) for use on chains (1, 4)
+    >> chained find
+    Found 1 accounts.
+    Account name: my-eth-acct, address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0, chain IDs: [1, 4]
+
+
+## User Guide
 
 All `ChainedAccount` features are available through Python or the Command Line Interface (CLI).
 
