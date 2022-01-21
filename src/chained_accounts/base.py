@@ -21,7 +21,7 @@ from hexbytes import HexBytes
 
 
 def default_homedir() -> Path:
-    """Returns the default home directory used to store encrypted key files.
+    """Returns the default home directory used for the keystore.
 
     If the directory does not exist, it will be created.
 
@@ -55,12 +55,10 @@ def ask_for_password(name: str) -> str:
 class ChainedAccount:
     """Chained Account
 
-    An Chained Account is used to specify an account address, its private key,
-    and the EVM chains on which it can be used.
+    The ChainedAccount class provides access to a keystore for ethereum accounts, where each account is
+    associated with one or more EVM chains.
 
-    New ChainedAccounts are stored on-disk locally in encrypted format using the `eth_account` package.
-
-    The object defaults to a locked state, with the private key remaining encrypted.
+    ChainedAccount objects default to a locked state, with the private key remaining encrypted.
     The `decrypt()` method must be called prior to accessing the private_key attribute, otherwise an exception
     will be raised.
 
@@ -81,9 +79,9 @@ class ChainedAccount:
     _account_json: Dict[str, Any]
 
     def __init__(self, name: str):
-        """Loads an existing account from disk
+        """Get an account from the keystore
 
-        New accounts must first be creating using `ChainedAccount.new()`
+        Accounts must first be added to the keystore using `ChainedAccount.add()`
 
         Args:
             name: User-specified account name
@@ -102,7 +100,7 @@ class ChainedAccount:
 
     @classmethod
     def get(cls, name: str):
-        """Get an account"""
+        """Get an account from the keystore"""
         return cls(name)
 
     @classmethod
@@ -114,7 +112,7 @@ class ChainedAccount:
         private_key: bytes,
         password: Optional[str] = None,
     ) -> ChainedAccount:
-        """Create a new ChainedAccount with an encrypted keystore on disk.
+        """Add a new ChainedAccount to the keystore.
 
         Args:
             name:
