@@ -50,7 +50,8 @@ or, from the CLI:
 
 ### Getting accounts from the keystore
 
-Accounts can be accessed by `name`, or can be found by searching the keystore using `find_accounts()`. 
+Accounts can be accessed by `name` using `ChainedAccount.get(name)`, 
+or can be found by searching the keystore using `find_accounts()`. 
 The following example demonstrates how an application can search for user accounts by EVM chain.
 
 ```python
@@ -67,7 +68,7 @@ Chains: [1, 4]
 
 Or, from the command line:
 
-    > chained find
+    >> chained find
     Found 2 accounts.
     Account name: my-eth-acct, address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0, chain IDs: [1, 4]
     Account name: my-matic-acct, address: 0xc1b6c5d803c45b8d1097d07df0c816157db6f00c, chain IDs: [137]
@@ -77,8 +78,9 @@ Or, from the command line:
 Note that the `ChainedAccount`s private key remains encrypted until they are unlocked with a password.
 
 ```python
-assert ca1.locked
+assert not ChainedAccount.get('my-eth-acct').is_unlocked
 ```
+
 
 
 

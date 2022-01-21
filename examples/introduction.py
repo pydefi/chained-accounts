@@ -11,13 +11,14 @@ ChainedAccount.add('my-matic-acct', 137, key2, password='bar')
 # Getting accounts from the keystore
 
 ca1 = find_accounts(chain_id=1)[0]
-assert ca1.locked
 print(ca1)
 print(f"Address: {ca1.address}")
 print(f"Chains: {ca1.chains}")
 
 
 ca2 = ChainedAccount.get('my-matic-acct')
+
+assert not ca1.is_unlocked
 
 
 # Cleanup example accounts
