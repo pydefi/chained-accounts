@@ -1,7 +1,7 @@
 # Chained Accounts
 ![Continuous Integration](https://github.com/tellor-io/pytelliot/actions/workflows/py39.yml/badge.svg)
 
-A framework to help applications and users manage multiple ethereum accounts on multiple chains.
+A thin framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
 Each `ChainedAccount`:
 
