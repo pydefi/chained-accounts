@@ -1,8 +1,9 @@
-"""EVM account/key management
+"""Chained account/key management
 
 This module is intended to provide a higher degree of security than storing private keys in clear text.
 Use at your own risk.
 """
+
 from __future__ import annotations
 import json
 from pathlib import Path
@@ -27,7 +28,7 @@ def default_homedir() -> Path:
     Returns:
         pathlib.Path : Path to home directory
     """
-    homedir = Path.home() / (".chained_accountss")
+    homedir = Path.home() / (".chained_accounts")
     homedir = homedir.resolve().absolute()
     if not homedir.is_dir():
         homedir.mkdir()
@@ -51,12 +52,13 @@ def ask_for_password(name: str) -> str:
     return password
 
 
-class EvmAccount:
-    """EVM Account
+class ChainedAccount:
+    """Chained Account
 
-    An EVM account is used to specify an account address, its private key, and the EVM chains on which it can be used.
+    An Chained Account is used to specify an account address, its private key,
+    and the EVM chains on which it can be used.
 
-    New EvmAccounts are stored on-disk locally in encrypted format using the `eth_account` package.
+    New ChainedAccounts are stored on-disk locally in encrypted format using the `eth_account` package.
 
     The object defaults to a locked state, with the private key remaining encrypted.
     The `decrypt()` method must be called prior to accessing the private_key attribute, otherwise an exception
@@ -66,11 +68,11 @@ class EvmAccount:
         name:
             User-specified account identifier.
         chain_ids:
-            List of applicable EVM chains for this EVM account.
+            List of applicable EVM chains for this account.
         unlocked:
             Returns true if the account is unlocked (private_key is exposed!).
         private_key:
-            Returns the private key if the EvmAccount is unlocked, otherwise an exception is raised.
+            Returns the private key if the account is unlocked, otherwise an exception is raised.
         keyfile:
             Returns the path to the stored keyfile
     """
@@ -79,9 +81,9 @@ class EvmAccount:
     _account_json: Dict[str, Any]
 
     def __init__(self, name: str):
-        """Loads an existing EVM Account from disk
+        """Loads an existing account from disk
 
-        New accounts must first be creating using `EvmAccount.new()`
+        New accounts must first be creating using `ChainedAccount.new()`
 
         Args:
             name: User-specified account name
@@ -96,7 +98,7 @@ class EvmAccount:
             self._account_json = {}
 
     def __repr__(self) -> str:
-        return f"EvmAccount(name={self.name})"
+        return f"ChainedAccount(name={self.name})"
 
     @classmethod
     def new(
@@ -106,26 +108,26 @@ class EvmAccount:
         chain_ids: Union[int, List[int]],
         private_key: bytes,
         password: Optional[str] = None,
-    ) -> EvmAccount:
-        """Create a new EVM account and an encrypted keystore on disk.
+    ) -> ChainedAccount:
+        """Create a new ChainedAccount with an encrypted keystore on disk.
 
         Args:
             name:
                 User-specified account name
             chain_ids:
-                List of applicable EVM chains for this EVM account.
+                List of applicable EVM chains for this account.
             private_key:
                 Private Key for the account.  User will be prompted for password if not provided.
             password:
                 Password used to encrypt the keystore
 
         Returns:
-            A new EVM account
+            A new ChainedAccount
         """
 
-        account_names = list_account_names()
-        if name in account_names:
-            raise Exception(f"EVM Account {name} already exists ")
+        names = list_names()
+        if name in names:
+            raise Exception(f"Account {name} already exists ")
 
         self = cls(name=name)
 
@@ -171,6 +173,10 @@ class EvmAccount:
         pkey = Account.decrypt(self._account_json["keystore_json"], password)
         self._local_account = Account.from_key(pkey)
 
+    def lock(self) -> None:
+        """Lock account"""
+        self._local_account = None
+
     @property
     def chain_ids(self) -> List[int]:
 
@@ -190,7 +196,7 @@ class EvmAccount:
             assert self._local_account is not None
             return HexBytes(self._local_account.key)
         else:
-            raise AccountLockedError(f"{self.name} EvmAccount must be unlocked to access the private key.")
+            raise AccountLockedError(f"{self.name} ChainedAccount must be unlocked to access the private key.")
 
     @property
     def address(self) -> HexAddress:
@@ -202,7 +208,7 @@ class EvmAccount:
             assert self._local_account is not None
             return self._local_account
         else:
-            raise AccountLockedError(f"{self.name} LocalAccount cannot be accessed when EvmAccount is locked.")
+            raise AccountLockedError(f"{self.name} LocalAccount cannot be accessed when ChainedAccount is locked.")
 
     # --------------------------------------------------------------------------------
     # File access methods
@@ -233,28 +239,30 @@ class EvmAccount:
             self.keyfile.unlink()
 
 
-def list_account_names():
+def list_names():
     """Get a list of all account names"""
-    account_names = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
+    names = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
 
-    return account_names
+    return names
 
 
-def get_account(name: str) -> EvmAccount:
+def get_account(name: str) -> ChainedAccount:
     """Get account by name.
 
     Returns:
-        The EVM account or an exception if it does not exist
+        The ChainedAccount account with matching name or an exception if it does not exist
     """
-    return EvmAccount(name)
+    return ChainedAccount(name)
 
 
 def find_accounts(
     name: Optional[str] = None,
     chain_id: Optional[int] = None,
     address: Optional[Union[AnyAddress, str, bytes]] = None,
-) -> List[EvmAccount]:
-    """Search for accounts
+) -> List[ChainedAccount]:
+    """Search for matching accounts.
+
+    If no arguments are provided, all accounts will be returned.
 
     Args:
         name: search by account name
@@ -266,8 +274,8 @@ def find_accounts(
     """
 
     accounts = []
-    for account_name in list_account_names():
-        account = EvmAccount(account_name)
+    for acc_name in list_names():
+        account = ChainedAccount(acc_name)
         if name is not None:
             if name != account.name:
                 continue
