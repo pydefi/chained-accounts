@@ -20,11 +20,9 @@ All `ChainedAccount` features are available through Python or the Command Line I
 
 ### Adding a new account
 
-The following example demonstrates adding two accounts to the keystore.  
-The first account is for use on either ethereum mainnet or Rinkeby testnet.
-The second account is for use on Polygon mainnet.
-For a list of valid chain identifiers, see www.chainlist.org.
-
+The following example demonstrates adding two accounts to the keystore. The first account is for use on either ethereum
+mainnet or Rinkeby testnet. The second account is for use on Polygon mainnet. For a list of valid chain identifiers,
+see www.chainlist.org.
 
 ```python
 from chained_accounts import ChainedAccount
@@ -50,14 +48,14 @@ or, from the CLI:
 
 ### Getting accounts from the keystore
 
-Accounts can be accessed by `name` using `ChainedAccount.get(name)`, 
-or can be found by searching the keystore using `find_accounts()`. 
-The following example demonstrates how an application can search for user accounts by EVM chain.
+Accounts can be accessed by `name` using `ChainedAccount.get(name)`, or can be found by searching the keystore
+using `find_accounts()`. The following example demonstrates how an application can search for a user accounts to use on
+a specific EVM chain.
 
 ```python
-ca1 = find_accounts(chain_id=1)[0]
-print(f"Address: {ca1.address}")
-print(f"Chains: {ca1.chains}")
+acc = find_accounts(chain_id=1)[0]
+print(f"Address: {acc.address}")
+print(f"Chains: {acc.chains}")
 ```
 
 ```pycon
@@ -66,23 +64,32 @@ Address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0
 Chains: [1, 4]
 ```
 
-Or, from the command line:
+Or, from the command line (find all accounts):
 
     >> chained find
     Found 2 accounts.
     Account name: my-eth-acct, address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0, chain IDs: [1, 4]
     Account name: my-matic-acct, address: 0xc1b6c5d803c45b8d1097d07df0c816157db6f00c, chain IDs: [137]
 
-### Accessing private keys 
+### Accessing private keys
 
-Note that the `ChainedAccount`s private key remains encrypted until they are unlocked with a password.
+Note that the `ChainedAccount` private key remains encrypted until the account is unlocked with a password.
 
 ```python
 assert not ChainedAccount.get('my-eth-acct').is_unlocked
 ```
 
+To unlock and access the private key:
 
+```python
+acc = ChainedAccount.get('my-eth-acct')
+acc.unlock('foo')
+print(f"Private key: {acc.key.hex()}")
+```
 
+```pycon
+Private key: 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706
+```
 
 ## Development
 
