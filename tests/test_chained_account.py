@@ -37,7 +37,7 @@ def test_new_evm_account(test_accounts):
     runner = CliRunner()
 
     # New accounts are locked
-    assert not test_accounts[0].unlocked
+    assert not test_accounts[0].is_unlocked
     assert 1 in test_accounts[0].chains
     assert 4 in test_accounts[0].chains
 
@@ -63,7 +63,7 @@ def test_new_evm_account(test_accounts):
 
     # Lock account and verify
     test_accounts[0].lock()
-    assert not test_accounts[0].unlocked
+    assert not test_accounts[0].is_unlocked
 
     # Create a new account object by name
     t1 = ChainedAccount.get(test_accounts[0].name)

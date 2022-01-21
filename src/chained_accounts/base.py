@@ -67,7 +67,7 @@ class ChainedAccount:
             User-specified account name (no spaces).
         chains:
             List of applicable EVM chain IDs for this account (see www.chainlist.org).
-        unlocked:
+        is_unlocked:
             Returns true if the account is unlocked (key is exposed!).
         key:
             Returns the private key if the account is unlocked, otherwise an exception is raised.
@@ -166,7 +166,7 @@ class ChainedAccount:
         Args:
             password: Used to decrypt the keyfile data
         """
-        if self.unlocked:
+        if self.is_unlocked:
             return
 
         if password is None:
@@ -188,18 +188,13 @@ class ChainedAccount:
         return self._chains
 
     @property
-    def locked(self) -> bool:
-        """"""
-        return self._local_account is None
-
-    @property
-    def unlocked(self) -> bool:
+    def is_unlocked(self) -> bool:
         """"""
         return self._local_account is not None
 
     @property
     def key(self) -> HexBytes:
-        if self.unlocked:
+        if self.is_unlocked:
             assert self._local_account is not None
             return HexBytes(self._local_account.key)
         else:
@@ -211,7 +206,7 @@ class ChainedAccount:
 
     @property
     def local_account(self) -> LocalAccount:
-        if self.unlocked:
+        if self.is_unlocked:
             assert self._local_account is not None
             return self._local_account
         else:
