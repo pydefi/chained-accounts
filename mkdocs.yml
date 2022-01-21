@@ -1,0 +1,66 @@
+# Project information
+site_name: Chained Accounts Documentation
+site_url: https://pydefi.github.io/chained-accounts/
+site_author: PyDefi Development Team
+site_description: >-
+  A framework to help applications manage EVM accounts across multiple chains.
+
+# Repository
+repo_name: pydefi/chained-accounts
+repo_url: https://github.com/pydefi/chained-accounts
+edit_uri: ""
+
+# Copyright
+copyright: Copyright (c) 2022-, PyDefi Development Team
+
+
+theme:
+  name: material
+  logo:
+  favicon:
+  features:
+    # - navigation.tabs
+    - navigation.sections
+  palette:
+    primary: black
+    scheme: default
+
+plugins:
+  - search
+  - autorefs
+  - mkdocstrings:
+      enable_inventory: true
+      watch:
+        - src
+      handlers:
+        python:
+          rendering:
+            show_root_heading: true
+            show_root_full_path: false
+            # show_category_heading: true
+            members_order: source
+            heading_level: 2
+
+markdown_extensions:
+  - admonition
+  - abbr
+  - attr_list
+  - def_list
+  - footnotes
+  - meta
+  - md_in_html
+  - codehilite
+  - pymdownx.highlight
+  - pymdownx.inlinehilite
+  - pymdownx.snippets
+  - toc:
+      permalink: true
+  - markdown.extensions.codehilite:
+      guess_lang: false
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+
+nav:
+  - Home: index.md
+
