@@ -11,7 +11,7 @@ from typing import Union, Optional, List, Dict, Any
 
 from eth_typing import HexAddress, AnyAddress
 from eth_utils import to_normalized_address
-from chained_accounts import ConfirmPasswordError, AccountLockedError
+from chained_accounts.exceptions import AccountLockedError, ConfirmPasswordError
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
@@ -21,7 +21,7 @@ from hexbytes import HexBytes
 
 
 def default_homedir() -> Path:
-    """Returns the default home directory used to store encrypted key files.
+    """Returns the default home directory used for the keystore.
 
     If the directory does not exist, it will be created.
 
@@ -55,68 +55,70 @@ def ask_for_password(name: str) -> str:
 class ChainedAccount:
     """Chained Account
 
-    An Chained Account is used to specify an account address, its private key,
-    and the EVM chains on which it can be used.
+    The ChainedAccount class provides access to a keystore for ethereum accounts, where each account is
+    associated with one or more EVM chains.
 
-    New ChainedAccounts are stored on-disk locally in encrypted format using the `eth_account` package.
-
-    The object defaults to a locked state, with the private key remaining encrypted.
-    The `decrypt()` method must be called prior to accessing the private_key attribute, otherwise an exception
+    ChainedAccount objects default to a locked state, with the private key remaining encrypted.
+    The `decrypt()` method must be called prior to accessing the key attribute, otherwise an exception
     will be raised.
 
     Attributes:
         name:
-            User-specified account identifier.
-        chain_ids:
-            List of applicable EVM chains for this account.
-        unlocked:
-            Returns true if the account is unlocked (private_key is exposed!).
-        private_key:
+            User-specified account name (no spaces).
+        chains:
+            List of applicable EVM chain IDs for this account (see www.chainlist.org).
+        is_unlocked:
+            Returns true if the account is unlocked (key is exposed!).
+        key:
             Returns the private key if the account is unlocked, otherwise an exception is raised.
         keyfile:
             Returns the path to the stored keyfile
     """
 
-    _chain_ids: List[int]
+    _chains: List[int]
     _account_json: Dict[str, Any]
 
     def __init__(self, name: str):
-        """Loads an existing account from disk
+        """Get an account from the keystore
 
-        New accounts must first be creating using `ChainedAccount.new()`
+        Accounts must first be added to the keystore using `ChainedAccount.add()`
 
         Args:
-            name: User-specified account name
+            name: Unique account name
         """
 
         self.name: str = name
         self._local_account: Optional[LocalAccount] = None
-        self._chain_ids = []
+        self._chains = []
         try:
             self._load()
         except FileNotFoundError:
             self._account_json = {}
 
     def __repr__(self) -> str:
-        return f"ChainedAccount(name={self.name})"
+        return f"ChainedAccount('{self.name}')"
 
     @classmethod
-    def new(
+    def get(cls, name: str):
+        """Get an account from the keystore"""
+        return cls(name)
+
+    @classmethod
+    def add(
         cls,
         name: str,
-        *,
-        chain_ids: Union[int, List[int]],
-        private_key: bytes,
+        chains: Union[int, List[int]],
+        key: bytes,
         password: Optional[str] = None,
     ) -> ChainedAccount:
-        """Create a new ChainedAccount with an encrypted keystore on disk.
+        """Add a new ChainedAccount to the keystore.
 
         Args:
             name:
-                User-specified account name
-            chain_ids:
-                List of applicable EVM chains for this account.
-            private_key:
+                Account name
+            chains:
+                List of applicable EVM chain IDs for this account (see www.chainlist.org).
+            key:
                 Private Key for the account.  User will be prompted for password if not provided.
             password:
                 Password used to encrypt the keystore
@@ -131,10 +133,10 @@ class ChainedAccount:
 
         self = cls(name=name)
 
-        if isinstance(chain_ids, int):
-            chain_ids = [chain_ids]
+        if isinstance(chains, int):
+            chains = [chains]
 
-        self._chain_ids = chain_ids
+        self._chains = chains
 
         if password is None:
             try:
@@ -150,9 +152,9 @@ class ChainedAccount:
                 raise ConfirmPasswordError(f"Account: {name}")
             password = password1
 
-        keystore_json = Account.encrypt(private_key, password)
+        keystore_json = Account.encrypt(key, password)
 
-        self._account_json = {"chain_ids": chain_ids, "keystore_json": keystore_json}
+        self._account_json = {"chains": chains, "keystore_json": keystore_json}
 
         self._store()
 
@@ -164,35 +166,35 @@ class ChainedAccount:
         Args:
             password: Used to decrypt the keyfile data
         """
-        if self.unlocked:
+        if self.is_unlocked:
             return
 
         if password is None:
             password = getpass.getpass(f"Enter password for {self.name} account: ")
 
-        pkey = Account.decrypt(self._account_json["keystore_json"], password)
-        self._local_account = Account.from_key(pkey)
+        key = Account.decrypt(self._account_json["keystore_json"], password)
+        self._local_account = Account.from_key(key)
 
     def lock(self) -> None:
         """Lock account"""
         self._local_account = None
 
     @property
-    def chain_ids(self) -> List[int]:
+    def chains(self) -> List[int]:
 
-        if not self._chain_ids:
-            self._chain_ids = self._account_json["chain_ids"]
+        if not self._chains:
+            self._chains = self._account_json["chains"]
 
-        return self._chain_ids
+        return self._chains
 
     @property
-    def unlocked(self) -> bool:
+    def is_unlocked(self) -> bool:
         """"""
         return self._local_account is not None
 
     @property
-    def private_key(self) -> HexBytes:
-        if self.unlocked:
+    def key(self) -> HexBytes:
+        if self.is_unlocked:
             assert self._local_account is not None
             return HexBytes(self._local_account.key)
         else:
@@ -204,7 +206,7 @@ class ChainedAccount:
 
     @property
     def local_account(self) -> LocalAccount:
-        if self.unlocked:
+        if self.is_unlocked:
             assert self._local_account is not None
             return self._local_account
         else:
@@ -246,15 +248,6 @@ def list_names():
     return names
 
 
-def get_account(name: str) -> ChainedAccount:
-    """Get account by name.
-
-    Returns:
-        The ChainedAccount account with matching name or an exception if it does not exist
-    """
-    return ChainedAccount(name)
-
-
 def find_accounts(
     name: Optional[str] = None,
     chain_id: Optional[int] = None,
@@ -280,7 +273,7 @@ def find_accounts(
             if name != account.name:
                 continue
         if chain_id is not None:
-            if chain_id not in account.chain_ids:
+            if chain_id not in account.chains:
                 continue
         if address is not None:
             normalized_address = to_normalized_address(address)

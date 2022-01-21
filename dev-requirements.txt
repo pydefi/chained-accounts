@@ -2,9 +2,7 @@ mkdocs-material
 mkdocstrings
 pytest
 pytest-cov
-pre-commit
 mypy
 mypy-extensions
-tox
 black
 flake8
