@@ -1,4 +1,5 @@
 # Chained Accounts
+![Continuous Integration](https://github.com/tellor-io/pytelliot/actions/workflows/py39.yml/badge.svg)
 
 A framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
@@ -49,8 +50,8 @@ or, from the CLI:
 ### Getting accounts from the keystore
 
 Accounts can be accessed by `name` using `ChainedAccount.get(name)`, or can be found by searching the keystore
-using `find_accounts()`. The following example demonstrates how an application can search for a user accounts to use on
-a specific EVM chain.
+using `find_accounts()`. The following example demonstrates how an application can search for a user account to use on
+Ethereum mainnet.
 
 ```python
 acc = find_accounts(chain_id=1)[0]
