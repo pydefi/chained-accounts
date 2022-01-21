@@ -1,9 +1,5 @@
 __version__ = "0.0.1.dev0"
 
+__all__ = ["ChainedAccount"]
 
-class AccountLockedError(Exception):
-    pass
-
-
-class ConfirmPasswordError(Exception):
-    pass
+from chained_accounts.base import ChainedAccount

@@ -22,14 +22,14 @@ def main(ctx, version) -> None:
 
 @main.command()
 @click.argument("name", type=str)
-@click.argument("private_key", type=str)
-@click.argument("chain_ids", type=int, nargs=-1)
-def add(name: str, private_key: str, chain_ids: List[int]) -> None:
+@click.argument("key", type=str)
+@click.argument("chains", type=int, nargs=-1)
+def add(name: str, key: str, chains: List[int]) -> None:
     """Add an account to the keystore.
 
     Adds an ethereum account for use by an application on one or more EVM chains.
     NAME is used to uniquely identify the account in the keystore.
-    The PRIVATE_KEY should be provided in hexadecimal format, beginning with 0x.
+    The private KEY should be provided in hexadecimal format, beginning with 0x.
     CHAIN_IDS is a list of the chains on which applications may use this account.
     """
 
@@ -38,9 +38,9 @@ def add(name: str, private_key: str, chain_ids: List[int]) -> None:
         click.echo(f"Account {name} already exists.")
         return
 
-    account = ChainedAccount.add(name, private_key=HexBytes(private_key), chain_ids=chain_ids)
+    account = ChainedAccount.add(name, key=HexBytes(key), chains=chains)
 
-    click.echo(f"Added new account {name} (address= {account.address}) for use on chains {account.chain_ids}")
+    click.echo(f"Added new account {name} (address= {account.address}) for use on chains {account.chains}")
 
 
 @main.command()
@@ -57,7 +57,7 @@ def find(name, address, chain_id):
     accounts = find_accounts(name=name, address=address, chain_id=chain_id)
     click.echo(f"Found {len(accounts)} accounts.")
     for account in accounts:
-        click.echo(f"Account name: {account.name}, address: {account.address}, chain IDs: {account.chain_ids}")
+        click.echo(f"Account name: {account.name}, address: {account.address}, chain IDs: {account.chains}")
 
 
 @main.command()
@@ -80,7 +80,7 @@ def key(name, password):
             password = getpass.getpass(f"Enter password for {name} keyfile: ")
         acc = ChainedAccount(name)
         acc.unlock(password)
-        click.echo(f"Private key: {acc.private_key.hex()}")
+        click.echo(f"Private key: {acc.key.hex()}")
     except ValueError:
         click.echo("Invalid Password")
 
