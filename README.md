@@ -7,7 +7,6 @@ A thin framework to help applications and users manage multiple ethereum account
 
 Blockchain applications are becoming more cross-chain and multi-chain, therefore having a need to 
 manage multiple user accounts on different chains.
-
 Users need an easy way to configure an application to use their private keys, including specifying which EVM
 chains they can be used on.  Applications also need an easy eay to access user private keys while
 providing a way to handle accounts securely, rather than storing them in plain text.  
