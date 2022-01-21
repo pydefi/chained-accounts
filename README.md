@@ -25,7 +25,7 @@ Applications can easily access the keystore and search for accounts by name, EVM
 Note: This package does not directly perform any encryption/decryption, but relies on the
 https://github.com/ethereum/eth-account package.  
 
-**USE AT YOUR OWN RISK**
+** USE AT YOUR OWN RISK **
 
 ## Installation
 
