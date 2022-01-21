@@ -3,6 +3,17 @@
 
 A thin framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
+*Motivation*
+
+Blockchain applications are becoming more cross-chain and multi-chain, therefore having a need to 
+manage multiple user accounts on different chains.
+
+Users need an easy way to configure an application to use their private keys, including specifying which EVM
+chains they can be used on.  Applications also need an easy eay to access user private keys while
+providing a way to handle accounts securely, rather than storing them in plain text.  
+
+*Overview*
+
 Each `ChainedAccount`:
 
 - has a user-friendly name
@@ -10,6 +21,9 @@ Each `ChainedAccount`:
 - is encrypted in a local keystore using the [`eth_keyfile`](https://github.com/ethereum/eth-keyfile) package.
 
 Applications can easily access the keystore and search for accounts by name, EVM chain, and address.
+
+Note: This package does not directly perform any encryption/decryption, but relies on the
+https://github.com/ethereum/eth-account package.  **USE AT YOUR OWN RISK**
 
 ## Installation
 
