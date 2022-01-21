@@ -188,6 +188,11 @@ class ChainedAccount:
         return self._chains
 
     @property
+    def locked(self) -> bool:
+        """"""
+        return self._local_account is None
+
+    @property
     def unlocked(self) -> bool:
         """"""
         return self._local_account is not None

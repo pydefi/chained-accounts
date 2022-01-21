@@ -2,10 +2,10 @@
 
 A framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
-Each `ChainedAccount`: 
+Each `ChainedAccount`:
 
 - has a user-friendly name
-- can be associated with one or more EVM chains.  
+- can be associated with one or more EVM chains.
 - is encrypted in a local keystore using the [`eth_keyfile`](https://github.com/ethereum/eth-keyfile) package.
 
 Applications can easily access the keystore and search for accounts by name, EVM chain, and address.
@@ -20,19 +20,20 @@ All `ChainedAccount` features are available through Python or the Command Line I
 
 ### Adding a new account
 
-The following example demonstrates adding two accounts to the keystore.
+The following example demonstrates adding two accounts to the keystore.  
+For a list of valid chain identifiers, see www.chainlist.org.
+
 - The first account is for use on either ethereum mainnet or Rinkeby testnet.
 - The second account is for use on Polygon mainnet.
 
-(for a list of valid chain identifiers, see www.chainlist.org)
-
 ```python
 from chained_accounts import ChainedAccount
+
 key = '0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706'
-ca1 = ChainedAccount.add('my-eth-acct', chains=[1, 4], key=key, password='foo')
+ChainedAccount.add('my-eth-acct', chains=[1, 4], key=key, password='foo')
 
 key = '0x7a3d4adc3b6fb4520893e9b486b67a730e0d879a421342f788dc3dc273543267'
-ca2 = ChainedAccount.add('my-matic-acct', chains=137, key=key, password='bar')
+ChainedAccount.add('my-matic-acct', chains=137, key=key, password='bar')
 ```
 
 or, from the CLI:
@@ -47,7 +48,31 @@ or, from the CLI:
     Confirm password: 
     Added new account my-matic-acct (address= 0xc1b6c5d803c45b8d1097d07df0c816157db6f00c) for use on chains (137,)
 
+### Getting accounts from the keystore
 
+Accounts can be accessed by name, or can be found by searching the keystore using `find_accounts`. The following example
+demonstrates how an application get search for user accounts by EVM chain.
+
+```python
+ca1 = find_accounts(chain_id=1)[0]
+assert ca1.locked
+print(f"Address: {ca1.address}")
+print(f"Chains: {ca1.chains}")
+```
+
+```pycon
+ChainedAccount('my-eth-acct')
+Address: 0xcd19cf65af3a3aea1f44a7cb0257fc7455f245f0
+Chains: [1, 4]
+```
+
+Note that the `ChainedAccount`s private key remains encrypted until they are unlocked with a password.
+
+```python
+assert ca1.locked
+```
+
+Simi
 
 ## Development
 
