@@ -1,6 +1,7 @@
 from typing import List
 
 import pytest
+from eth_utils import is_checksum_address
 from hexbytes import HexBytes
 from click.testing import CliRunner
 from chained_accounts.base import ChainedAccount, find_accounts
@@ -42,11 +43,12 @@ def test_new_evm_account(test_accounts):
     assert 4 in test_accounts[0].chains
 
     # Test loading by name
-    account_copy = ChainedAccount(test_accounts[0].name)
+    account_copy = ChainedAccount.get(test_accounts[0].name)
     assert 1 in account_copy.chains
     assert 4 in account_copy.chains
     assert account_copy.address == test_accounts[0].address
     print(account_copy.address)
+    assert is_checksum_address(account_copy.address)
 
     # Some properties are not available on locked accounts
     with pytest.raises(AccountLockedError):
