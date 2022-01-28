@@ -8,6 +8,7 @@ from chained_accounts.base import ChainedAccount, find_accounts
 from chained_accounts.exceptions import AccountLockedError
 import random
 from chained_accounts.cli import main
+from chained_accounts.base import CHAINED_ACCOUNTS_HOME
 
 pkey = HexBytes("0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d")
 PASSWORD = "foo"
@@ -22,9 +23,9 @@ def random_name() -> str:
 def test_accounts() -> List[ChainedAccount]:  # type: ignore
     """Create some test accounts"""
 
-    a1 = ChainedAccount.add(random_name(), chains=[1, 4], key=pkey, password=PASSWORD)
-    a2 = ChainedAccount.add(random_name(), chains=[2], key=pkey, password=PASSWORD)
-    a3 = ChainedAccount.add(random_name(), chains=[1, 3], key=pkey, password=PASSWORD)
+    a1 = ChainedAccount.import_key(random_name(), chains=[1, 4], key=pkey, password=PASSWORD)
+    a2 = ChainedAccount.import_key(random_name(), chains=[2], key=pkey, password=PASSWORD)
+    a3 = ChainedAccount.import_key(random_name(), chains=[1, 3], key=pkey, password=PASSWORD)
 
     yield [a1, a2, a3]
 
@@ -47,7 +48,6 @@ def test_new_evm_account(test_accounts):
     assert 1 in account_copy.chains
     assert 4 in account_copy.chains
     assert account_copy.address == test_accounts[0].address
-    print(account_copy.address)
     assert is_checksum_address(account_copy.address)
 
     # Some properties are not available on locked accounts
@@ -88,3 +88,24 @@ def test_new_evm_account(test_accounts):
     # Find with no filters should return all accounts
     result = find_accounts()
     assert len(result) > 0
+
+
+def test_datadir() -> List[ChainedAccount]:  # type: ignore
+    """Create some test accounts"""
+
+    datadir = CHAINED_ACCOUNTS_HOME / "test"
+    datadir.mkdir(exist_ok=False)
+
+    a1 = ChainedAccount.import_key(random_name(), chains=[1, 4], key=pkey, password=PASSWORD, datadir=datadir)
+    a2 = ChainedAccount.import_key(random_name(), chains=[2], key=pkey, password=PASSWORD, datadir=datadir)
+
+    accounts = find_accounts(datadir=datadir)
+    assert len(accounts) == 2
+
+    a1b = ChainedAccount.get(name=a1.name, datadir=datadir)
+    assert a1b.name == a1.name
+
+    # Cleanup test accounts
+    a1.delete()
+    a2.delete()
+    datadir.rmdir()
