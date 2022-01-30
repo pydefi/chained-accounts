@@ -25,6 +25,41 @@ from hexbytes import HexBytes
 
 from chained_accounts.exceptions import AccountLockedError
 from chained_accounts.exceptions import ConfirmPasswordError
+from chained_accounts.exceptions import InvalidDataDirectory
+
+
+def is_datadir(datadir: Path):
+    """Return true if the datadir exists and is a keystore.
+
+    datadir:
+        Data directory for the keystore
+    """
+
+    if datadir.is_dir():
+        flagfile = datadir / ".keystore"
+
+        if flagfile.is_file():
+            return True
+
+    return False
+
+
+def get_or_create_datadir(datadir: Union[str, Path]):
+    if not isinstance(datadir, Path):
+        datadir = Path(datadir).resolve().absolute()
+
+    flagfile = datadir / ".keystore"
+
+    if not datadir.exists():
+        print(f"Creating new keystore data directory {datadir}")
+        datadir.mkdir(exist_ok=False)
+        flagfile.touch(exist_ok=False)
+        return datadir
+    else:
+        if flagfile.exists():
+            return datadir
+        else:
+            raise InvalidDataDirectory(f"{datadir} is not a valid keystore data directory.")
 
 
 def default_homedir() -> Path:
@@ -33,7 +68,7 @@ def default_homedir() -> Path:
     If the directory does not exist, it will be created.
 
     Returns:
-        pathlib.Path : Path to home directory
+        pathlib.Path : Path to default home directory
     """
     homedir = Path.home() / (".chained_accounts")
     homedir = homedir.resolve().absolute()
@@ -82,14 +117,11 @@ class ChainedAccount:
             Returns the path to the stored keyfile
     """
 
-    _chains: List[int]
     _account_json: Dict[str, Any]
     _datadir: Path
 
     def __init__(self, name: str, datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME):
-        """Get an account from the keystore
-
-        Accounts must first be added to the keystore using `ChainedAccount.add()`
+        """Create a new ChainedAccount object
 
         Args:
             name:
@@ -101,16 +133,16 @@ class ChainedAccount:
 
         self.name: str = name
         self._local_account: Optional[LocalAccount] = None
-        self._chains = []
 
         if not isinstance(datadir, Path):
             datadir = Path(datadir).resolve().absolute()
+
+        if not is_datadir(datadir):
+            raise InvalidDataDirectory(f"{datadir} is not a valid keystore data directory.")
+
         self._datadir = datadir
 
-        try:
-            self._load()
-        except FileNotFoundError:
-            self._account_json = {}
+        self._account_json = {}
 
     def __repr__(self) -> str:
         return f"ChainedAccount('{self.name}')"
@@ -119,18 +151,24 @@ class ChainedAccount:
     def get(cls, name: str, datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME):
         """Get an account from the keystore
 
+        Accounts must first be added to the keystore using `ChainedAccount.import_key()`
+        If an account is not found, a KeyError exception is raised.
+
         Args:
-            datadir: Data directory for the keystore
-            name: Unique account name
+            name:
+                Unique account name
+            datadir:
+                Data directory for the keystore
         """
-        return cls(name, datadir=datadir)
+        acc = cls(name, datadir=datadir)
+        return acc
 
     @classmethod
     def import_key(
         cls,
         name: str,
-        chains: Union[int, List[int]],
         key: bytes,
+        chains: Optional[Union[int, List[int]]] = None,
         password: Optional[str] = None,
         datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME,
     ) -> ChainedAccount:
@@ -152,6 +190,8 @@ class ChainedAccount:
             A new ChainedAccount
         """
 
+        datadir = get_or_create_datadir(datadir)
+
         names = list_names(datadir=datadir)
         if name in names:
             raise Exception(f"Account {name} already exists ")
@@ -160,8 +200,6 @@ class ChainedAccount:
 
         if isinstance(chains, int):
             chains = [chains]
-
-        self._chains = chains
 
         if password is None:
             try:
@@ -200,7 +238,7 @@ class ChainedAccount:
         if password is None:
             password = getpass.getpass(f"Enter password for {self.name} account: ")
 
-        key = Account.decrypt(self._account_json["keystore_json"], password)
+        key = Account.decrypt(self.account_json["keystore_json"], password)
         self._local_account = Account.from_key(key)
 
     def lock(self) -> None:
@@ -210,10 +248,7 @@ class ChainedAccount:
     @property
     def chains(self) -> List[int]:
 
-        if not self._chains:
-            self._chains = self._account_json["chains"]
-
-        return self._chains
+        return self.account_json["chains"]
 
     @property
     def is_unlocked(self) -> bool:
@@ -230,7 +265,7 @@ class ChainedAccount:
 
     @property
     def address(self) -> HexAddress:
-        return to_checksum_address(self._account_json["keystore_json"]["address"])
+        return to_checksum_address(self.account_json["keystore_json"]["address"])
 
     @property
     def local_account(self) -> LocalAccount:
@@ -239,6 +274,13 @@ class ChainedAccount:
             return self._local_account
         else:
             raise AccountLockedError(f"{self.name} LocalAccount cannot be accessed when ChainedAccount is locked.")
+
+    @property
+    def account_json(self):
+        """Returns account JSON contents."""
+        if not self._account_json:
+            self._load()
+        return self._account_json
 
     # --------------------------------------------------------------------------------
     # File access methods
@@ -262,7 +304,7 @@ class ChainedAccount:
             raise FileExistsError(f"Keyfile already exists: {self.keyfile}")
 
         with open(self.keyfile, "w") as f:
-            json.dump(self._account_json, f, indent=2)
+            json.dump(self.account_json, f, indent=2)
 
     def delete(self):
         if self.keyfile.exists:
@@ -278,7 +320,10 @@ def list_names(datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME):
     if not isinstance(datadir, Path):
         datadir = Path(datadir).resolve().absolute()
 
-    names = [f.stem for f in datadir.iterdir()]
+    if not is_datadir(datadir):
+        raise InvalidDataDirectory(f"{datadir} is not a valid keystore data directory.")
+
+    names = [f.stem for f in datadir.iterdir() if f.is_file() and f.suffix == ".json"]
 
     return names
 
@@ -286,7 +331,7 @@ def list_names(datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME):
 def find_accounts(
     datadir: Union[str, Path] = CHAINED_ACCOUNTS_HOME,
     name: Optional[str] = None,
-    chain_id: Optional[int] = None,
+    chain: Optional[int] = None,
     address: Optional[Union[AnyAddress, str, bytes]] = None,
 ) -> List[ChainedAccount]:
     """Search for matching accounts.
@@ -295,7 +340,7 @@ def find_accounts(
 
     Args:
         name: search by account name
-        chain_id: search for accounts with matching chain_id
+        chain: search for accounts with matching chain ID
         address: search for accounts with matching address
         datadir: Data directory for the keystore
 
@@ -307,12 +352,12 @@ def find_accounts(
 
     accounts = []
     for acc_name in list_names(datadir):
-        account = ChainedAccount(acc_name, datadir=datadir)
+        account = ChainedAccount.get(acc_name, datadir=datadir)
         if name is not None:
             if name != account.name:
                 continue
-        if chain_id is not None:
-            if chain_id not in account.chains:
+        if chain is not None:
+            if chain not in account.chains:
                 continue
         if address is not None:
             normalized_address = to_normalized_address(address)

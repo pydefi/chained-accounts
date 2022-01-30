@@ -4,3 +4,7 @@ class AccountLockedError(Exception):
 
 class ConfirmPasswordError(Exception):
     pass
+
+
+class InvalidDataDirectory(Exception):
+    pass
