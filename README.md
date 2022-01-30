@@ -42,7 +42,7 @@ Create an account for use on either Ethereum Mainnet or Rinkeby testnet.
 from chained_accounts import ChainedAccount, find_accounts
 
 key1 = "0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706"
-ChainedAccount.add("my-eth-acct", [1, 4], key1, password="foo")
+ChainedAccount.import_key("my-eth-acct", [1, 4], key1, password="foo")
 
 acc = find_accounts(chain_id=1)[0]
 print(f"Address: {acc.address}")
@@ -83,10 +83,10 @@ see www.chainlist.org.
 from chained_accounts import ChainedAccount
 
 key = '0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706'
-ChainedAccount.add('my-eth-acct', chains=[1, 4], key=key, password='foo')
+ChainedAccount.import_key('my-eth-acct', chains=[1, 4], key=key, password='foo')
 
 key = '0x7a3d4adc3b6fb4520893e9b486b67a730e0d879a421342f788dc3dc273543267'
-ChainedAccount.add('my-matic-acct', chains=137, key=key, password='bar')
+ChainedAccount.import_key('my-matic-acct', chains=137, key=key, password='bar')
 ```
 
 or, from the CLI:
