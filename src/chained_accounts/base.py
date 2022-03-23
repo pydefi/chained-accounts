@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import Union, Optional, List, Dict, Any
 
 from eth_typing import HexAddress, AnyAddress
-from eth_utils import to_normalized_address
+from eth_utils import to_normalized_address, to_checksum_address
 from chained_accounts.exceptions import AccountLockedError, ConfirmPasswordError
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
@@ -154,6 +154,9 @@ class ChainedAccount:
 
         keystore_json = Account.encrypt(key, password)
 
+        # Make sure that address is a checksum address:
+        keystore_json["address"] = to_checksum_address(keystore_json["address"])
+
         self._account_json = {"chains": chains, "keystore_json": keystore_json}
 
         self._store()
@@ -202,7 +205,7 @@ class ChainedAccount:
 
     @property
     def address(self) -> HexAddress:
-        return to_normalized_address(self._account_json["keystore_json"]["address"])
+        return to_checksum_address(self._account_json["keystore_json"]["address"])
 
     @property
     def local_account(self) -> LocalAccount:
