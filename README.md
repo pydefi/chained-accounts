@@ -1,6 +1,6 @@
 # Chained Accounts
 
-![Continuous Integration](https://github.com/tellor-io/pytelliot/actions/workflows/py39.yml/badge.svg)
+![CI](https://github.com/pydefi/chained-accounts/actions/workflows/ci.yml/badge.svg)
 
 A thin framework to help applications and users manage multiple ethereum accounts on multiple chains.
 
@@ -150,8 +150,7 @@ Private key: 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706
 
 ### Developer Mode Installation
 
-    pip install -e .
-    pip install -r dev-requirements.txt
+    pip install -e ".[dev]"
 
 ### Running tests
 
@@ -161,9 +160,6 @@ Private key: 0x57fe7105302229455bcfd58a8b531b532d7a2bb3b50e1026afa455cd332bf706
 
 All code should pass the following checks prior to submitting.
 
-    mypy
-    black src tests
-    flake8
-
-
+    ruff check src/ tests/
+    ruff format --check src/ tests/
 
