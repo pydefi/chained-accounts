@@ -4,42 +4,35 @@ This module is intended to provide a higher degree of security than storing priv
 Use at your own risk.
 """
 
-from __future__ import annotations
+import getpass
 import json
 from pathlib import Path
-from typing import Union, Optional, List, Dict, Any
 
 from eth_typing import HexAddress, AnyAddress
-from eth_utils import to_normalized_address, to_checksum_address
+from eth_utils import to_normalized_address
 from chained_accounts.exceptions import AccountLockedError, ConfirmPasswordError
 from eth_account import Account
 from eth_account.signers.local import LocalAccount
 
-import getpass
-
 from hexbytes import HexBytes
 
-
-def default_homedir() -> Path:
-    """Returns the default home directory used for the keystore.
-
-    If the directory does not exist, it will be created.
-
-    Returns:
-        pathlib.Path : Path to home directory
-    """
-    homedir = Path.home() / (".chained_accounts")
-    homedir = homedir.resolve().absolute()
-    if not homedir.is_dir():
-        homedir.mkdir()
-
-    return homedir
+_homedir: Path | None = None
 
 
-CHAINED_ACCOUNTS_HOME = default_homedir()
+def get_homedir() -> Path:
+    """Return the home directory used for the keystore, creating it if needed."""
+    global _homedir
+    if _homedir is None:
+        _homedir = (Path.home() / ".chained_accounts").resolve()
+    if not _homedir.is_dir():
+        _homedir.mkdir(parents=True)
+    return _homedir
 
-if not CHAINED_ACCOUNTS_HOME.exists():
-    CHAINED_ACCOUNTS_HOME.mkdir()
+
+def set_homedir(path: Path | None) -> None:
+    """Override the keystore home directory (or reset to default with None)."""
+    global _homedir
+    _homedir = path
 
 
 def ask_for_password(name: str) -> str:
@@ -75,8 +68,8 @@ class ChainedAccount:
             Returns the path to the stored keyfile
     """
 
-    _chains: List[int]
-    _account_json: Dict[str, Any]
+    _chains: list[int]
+    _account_json: dict[str, object]
 
     def __init__(self, name: str):
         """Get an account from the keystore
@@ -88,7 +81,7 @@ class ChainedAccount:
         """
 
         self.name: str = name
-        self._local_account: Optional[LocalAccount] = None
+        self._local_account: LocalAccount | None = None
         self._chains = []
         try:
             self._load()
@@ -99,7 +92,7 @@ class ChainedAccount:
         return f"ChainedAccount('{self.name}')"
 
     @classmethod
-    def get(cls, name: str):
+    def get(cls, name: str) -> "ChainedAccount":
         """Get an account from the keystore"""
         return cls(name)
 
@@ -107,10 +100,10 @@ class ChainedAccount:
     def add(
         cls,
         name: str,
-        chains: Union[int, List[int]],
+        chains: int | list[int],
         key: bytes,
-        password: Optional[str] = None,
-    ) -> ChainedAccount:
+        password: str | None = None,
+    ) -> "ChainedAccount":
         """Add a new ChainedAccount to the keystore.
 
         Args:
@@ -129,7 +122,7 @@ class ChainedAccount:
 
         names = list_names()
         if name in names:
-            raise Exception(f"Account {name} already exists ")
+            raise ValueError(f"Account {name} already exists")
 
         self = cls(name=name)
 
@@ -145,17 +138,7 @@ class ChainedAccount:
                 print("Passwords do not match. Try again.")
                 password = ask_for_password(name)
 
-        if password is None:
-            password1 = getpass.getpass(f"Enter encryption password for {name}: ")
-            password2 = getpass.getpass("Confirm password: ")
-            if password2 != password1:
-                raise ConfirmPasswordError(f"Account: {name}")
-            password = password1
-
         keystore_json = Account.encrypt(key, password)
-
-        # Make sure that address is a checksum address:
-        keystore_json["address"] = to_checksum_address(keystore_json["address"])
 
         self._account_json = {"chains": chains, "keystore_json": keystore_json}
 
@@ -163,7 +146,7 @@ class ChainedAccount:
 
         return self
 
-    def unlock(self, password: Optional[str] = None) -> None:
+    def unlock(self, password: str | None = None) -> None:
         """Decrypt keystore data.
 
         Args:
@@ -183,7 +166,7 @@ class ChainedAccount:
         self._local_account = None
 
     @property
-    def chains(self) -> List[int]:
+    def chains(self) -> list[int]:
 
         if not self._chains:
             self._chains = self._account_json["chains"]
@@ -205,7 +188,7 @@ class ChainedAccount:
 
     @property
     def address(self) -> HexAddress:
-        return to_checksum_address(self._account_json["keystore_json"]["address"])
+        return to_normalized_address(self._account_json["keystore_json"]["address"])
 
     @property
     def local_account(self) -> LocalAccount:
@@ -221,7 +204,7 @@ class ChainedAccount:
     @property
     def keyfile(self) -> Path:
         """Returns the path to the locally stored keyfile"""
-        return CHAINED_ACCOUNTS_HOME / f"{self.name}.json"
+        return get_homedir() / f"{self.name}.json"
 
     def _load(self) -> None:
         """Load the account from disk."""
@@ -240,22 +223,22 @@ class ChainedAccount:
             json.dump(self._account_json, f, indent=2)
 
     def delete(self):
-        if self.keyfile.exists:
+        if self.keyfile.exists():
             self.keyfile.unlink()
 
 
 def list_names():
     """Get a list of all account names"""
-    names = [f.stem for f in CHAINED_ACCOUNTS_HOME.iterdir()]
+    names = [f.stem for f in get_homedir().iterdir()]
 
     return names
 
 
 def find_accounts(
-    name: Optional[str] = None,
-    chain_id: Optional[int] = None,
-    address: Optional[Union[AnyAddress, str, bytes]] = None,
-) -> List[ChainedAccount]:
+    name: str | None = None,
+    chain_id: int | None = None,
+    address: AnyAddress | str | bytes | None = None,
+) -> list["ChainedAccount"]:
     """Search for matching accounts.
 
     If no arguments are provided, all accounts will be returned.
