@@ -8,6 +8,8 @@ jobs:
   build-n-publish:
     name: Publish chained-accounts
     runs-on: ubuntu-latest
+    permissions:
+      id-token: write
 
     steps:
     - uses: actions/checkout@v4
@@ -24,5 +26,3 @@ jobs:
 
     - name: Publish to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
-      with:
-        password: ${{ secrets.CHAINED_ACCOUNTS_PYPI_API_TOKEN }}
