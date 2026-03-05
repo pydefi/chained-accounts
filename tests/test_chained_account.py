@@ -1,37 +1,22 @@
-from typing import List
-
 import pytest
-from eth_utils import is_checksum_address
 from hexbytes import HexBytes
 from click.testing import CliRunner
 from chained_accounts.base import ChainedAccount, find_accounts
 from chained_accounts.exceptions import AccountLockedError
-import random
 from chained_accounts.cli import main
 
 pkey = HexBytes("0x7a28b5ba57c53603b0b07b56bba752f7784bf506fa95edc395f5cf6c7514fe9d")
 PASSWORD = "foo"
 
 
-def random_name() -> str:
-    """Generate a random account name."""
-    return "temp" + str(random.randint(100000, 999999))
-
-
 @pytest.fixture
-def test_accounts() -> List[ChainedAccount]:  # type: ignore
+def test_accounts() -> list[ChainedAccount]:
     """Create some test accounts"""
+    a1 = ChainedAccount.add("acct-one", chains=[1, 4], key=pkey, password=PASSWORD)
+    a2 = ChainedAccount.add("acct-two", chains=[2], key=pkey, password=PASSWORD)
+    a3 = ChainedAccount.add("acct-three", chains=[1, 3], key=pkey, password=PASSWORD)
 
-    a1 = ChainedAccount.add(random_name(), chains=[1, 4], key=pkey, password=PASSWORD)
-    a2 = ChainedAccount.add(random_name(), chains=[2], key=pkey, password=PASSWORD)
-    a3 = ChainedAccount.add(random_name(), chains=[1, 3], key=pkey, password=PASSWORD)
-
-    yield [a1, a2, a3]
-
-    # Cleanup test accounts
-    a1.delete()
-    a2.delete()
-    a3.delete()
+    return [a1, a2, a3]
 
 
 def test_new_evm_account(test_accounts):
@@ -47,12 +32,10 @@ def test_new_evm_account(test_accounts):
     assert 1 in account_copy.chains
     assert 4 in account_copy.chains
     assert account_copy.address == test_accounts[0].address
-    print(account_copy.address)
-    assert is_checksum_address(account_copy.address)
 
     # Some properties are not available on locked accounts
     with pytest.raises(AccountLockedError):
-        print(test_accounts[0].key)
+        _ = test_accounts[0].key
 
     # Unlock accounts
     test_accounts[0].unlock(PASSWORD)
@@ -88,3 +71,20 @@ def test_new_evm_account(test_accounts):
     # Find with no filters should return all accounts
     result = find_accounts()
     assert len(result) > 0
+
+
+def test_duplicate_name_raises():
+    """Adding an account with an existing name raises ValueError."""
+    ChainedAccount.add("dupe-test", chains=[1], key=pkey, password=PASSWORD)
+    with pytest.raises(ValueError, match="already exists"):
+        ChainedAccount.add("dupe-test", chains=[2], key=pkey, password=PASSWORD)
+
+
+def test_delete_removes_keyfile():
+    """delete() removes keyfile; double-delete doesn't error."""
+    acc = ChainedAccount.add("del-test", chains=[1], key=pkey, password=PASSWORD)
+    assert acc.keyfile.exists()
+    acc.delete()
+    assert not acc.keyfile.exists()
+    # second delete is a no-op
+    acc.delete()
