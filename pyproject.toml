@@ -1,5 +1,5 @@
 [build-system]
-requires = ["setuptools >= 68.0"]
+requires = ["setuptools >= 77.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -7,7 +7,7 @@ name = "chained_accounts"
 dynamic = ["version"]
 description = "A thin framework to help applications and users manage multiple ethereum accounts on multiple chains."
 readme = "README.md"
-license = {text = "MIT"}
+license = "MIT"
 requires-python = ">=3.10"
 authors = [{name = "PyDefi Development Team", email = "clamdad+pydefi@protonmail.com"}]
 keywords = ["ethereum", "keystore", "key management", "private keys", "cross-chain", "multi-chain"]
@@ -16,7 +16,6 @@ classifiers = [
     "Development Status :: 3 - Alpha",
     "Intended Audience :: Developers",
     "Topic :: Office/Business :: Financial",
-    "License :: OSI Approved :: MIT License",
     "Programming Language :: Python :: 3.10",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
