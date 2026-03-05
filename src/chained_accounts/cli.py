@@ -1,9 +1,10 @@
+import getpass
+
 import click
+from hexbytes import HexBytes
+
 import chained_accounts
 from chained_accounts.base import ChainedAccount, find_accounts
-import getpass
-from typing import List
-from hexbytes import HexBytes
 
 
 @click.group(invoke_without_command=True)
@@ -24,7 +25,7 @@ def main(ctx, version) -> None:
 @click.argument("name", type=str)
 @click.argument("key", type=str)
 @click.argument("chains", type=int, nargs=-1)
-def add(name: str, key: str, chains: List[int]) -> None:
+def add(name: str, key: str, chains: list[int]) -> None:
     """Add an account to the keystore.
 
     Adds an ethereum account for use by an application on one or more EVM chains.

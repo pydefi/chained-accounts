@@ -1,19 +1,48 @@
 [build-system]
-requires = [
-    "setuptools >= 56.0",
-    "setuptools_scm >= 2.0.0, <3",
-    "wheel"
-]
+requires = ["setuptools >= 68.0"]
 build-backend = "setuptools.build_meta"
 
-[tool.black]
+[project]
+name = "chained_accounts"
+dynamic = ["version"]
+description = "A thin framework to help applications and users manage multiple ethereum accounts on multiple chains."
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+authors = [{name = "PyDefi Development Team", email = "clamdad+pydefi@protonmail.com"}]
+keywords = ["ethereum", "keystore", "key management", "private keys", "cross-chain", "multi-chain"]
+dependencies = ["click", "eth_account"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "Topic :: Office/Business :: Financial",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+]
+
+[project.urls]
+Homepage = "https://github.com/pydefi/chained-accounts"
+
+[project.optional-dependencies]
+dev = ["pytest", "pytest-cov", "ruff", "build"]
+
+[project.scripts]
+chained = "chained_accounts.cli:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.dynamic]
+version = {attr = "chained_accounts.__version__"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.ruff]
 line-length = 120
-src = ['src', 'tests']
 
 [tool.pytest.ini_options]
 minversion = "6.0"
-
-[tool.mypy]
-follow_imports = "normal"
-strict_optional = true
-files = ['src', 'tests']
