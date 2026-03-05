@@ -1,8 +1,0 @@
-mkdocs-material
-mkdocstrings
-pytest
-pytest-cov
-mypy
-mypy-extensions
-black
-flake8
